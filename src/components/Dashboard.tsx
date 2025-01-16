@@ -1,15 +1,53 @@
 import { useState } from "react";
-import { Search, Plus, FileText, Users, Settings } from "lucide-react";
+import { Search, Plus, FileText, Users, Settings, Trash2, Edit } from "lucide-react";
 import { motion } from "framer-motion";
+import { useStudents } from "@/context/StudentContext";
+import { StudentForm } from "./StudentForm";
+import { Button } from "@/components/ui/button";
+import { Student } from "@/types/student";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("students");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | undefined>();
+  const [studentToDelete, setStudentToDelete] = useState<Student | undefined>();
+  
+  const { students, deleteStudent, searchStudents } = useStudents();
 
   const menuItems = [
     { id: "students", icon: Users, label: "Students" },
     { id: "reports", icon: FileText, label: "Reports" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];
+
+  const handleEdit = (student: Student) => {
+    setSelectedStudent(student);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (student: Student) => {
+    setStudentToDelete(student);
+  };
+
+  const confirmDelete = () => {
+    if (studentToDelete) {
+      deleteStudent(studentToDelete.id);
+      setStudentToDelete(undefined);
+    }
+  };
+
+  const filteredStudents = searchQuery ? searchStudents(searchQuery) : students;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
@@ -47,40 +85,72 @@ const Dashboard = () => {
                   <input
                     type="text"
                     placeholder="Search students..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 w-64"
                   />
                 </div>
-                <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                <Button
+                  onClick={() => {
+                    setSelectedStudent(undefined);
+                    setIsFormOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
                   <Plus size={20} />
                   Add Student
-                </button>
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+                {filteredStudents.map((student, i) => (
                   <motion.div
-                    key={i}
+                    key={student.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-white rounded-lg p-6 shadow-sm hover-lift"
+                    className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="font-semibold text-gray-900">Student {i}</h3>
-                        <p className="text-sm text-gray-500">ID: STU-{1000 + i}</p>
+                        <h3 className="font-semibold text-gray-900">{student.name}</h3>
+                        <p className="text-sm text-gray-500">{student.id}</p>
                       </div>
-                      <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                        Active
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        student.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {student.status}
                       </span>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">Email:</span> student{i}@example.com
+                        <span className="font-medium">Email:</span> {student.email}
                       </p>
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">Course:</span> Computer Science
+                        <span className="font-medium">Course:</span> {student.course}
                       </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Enrolled:</span>{" "}
+                        {new Date(student.enrollmentDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(student)}
+                      >
+                        <Edit size={16} />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(student)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     </div>
                   </motion.div>
                 ))}
@@ -89,6 +159,30 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
+
+      <StudentForm
+        student={selectedStudent}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedStudent(undefined);
+        }}
+      />
+
+      <AlertDialog open={!!studentToDelete} onOpenChange={() => setStudentToDelete(undefined)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the student's record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
