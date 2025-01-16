@@ -19,12 +19,117 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { toast } from "@/components/ui/use-toast";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
   const { students } = useStudents();
 
   const generateReport = (type: string) => {
-    // In a real application, this would generate a proper PDF report
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Add header
+    doc.setFontSize(20);
+    doc.text("Student Management System", pageWidth / 2, 15, { align: "center" });
+    doc.setFontSize(14);
+    
+    switch (type) {
+      case "student-list":
+        // Title
+        doc.text("Student List Report", pageWidth / 2, 25, { align: "center" });
+        doc.setFontSize(12);
+        
+        // Generate table
+        const studentData = students.map(student => [
+          student.id,
+          student.name,
+          student.email,
+          student.course,
+          student.status,
+          new Date(student.enrollmentDate).toLocaleDateString()
+        ]);
+
+        autoTable(doc, {
+          head: [['ID', 'Name', 'Email', 'Course', 'Status', 'Enrollment Date']],
+          body: studentData,
+          startY: 35,
+        });
+        break;
+
+      case "enrollment-stats":
+        // Title
+        doc.text("Enrollment Statistics Report", pageWidth / 2, 25, { align: "center" });
+        doc.setFontSize(12);
+
+        // Course distribution
+        const courseStats = students.reduce((acc: { [key: string]: number }, student) => {
+          acc[student.course] = (acc[student.course] || 0) + 1;
+          return acc;
+        }, {});
+
+        const courseData = Object.entries(courseStats).map(([course, count]) => [
+          course,
+          count.toString(),
+          `${((count / students.length) * 100).toFixed(1)}%`
+        ]);
+
+        autoTable(doc, {
+          head: [['Course', 'Students', 'Percentage']],
+          body: courseData,
+          startY: 35,
+        });
+
+        // Status distribution
+        const activeCount = students.filter(s => s.status === 'active').length;
+        const inactiveCount = students.length - activeCount;
+
+        doc.text("Status Distribution", 14, doc.lastAutoTable.finalY + 20);
+        autoTable(doc, {
+          head: [['Status', 'Count', 'Percentage']],
+          body: [
+            ['Active', activeCount.toString(), `${((activeCount / students.length) * 100).toFixed(1)}%`],
+            ['Inactive', inactiveCount.toString(), `${((inactiveCount / students.length) * 100).toFixed(1)}%`]
+          ],
+          startY: doc.lastAutoTable.finalY + 25,
+        });
+        break;
+
+      case "print":
+        // Title
+        doc.text("Detailed Student Report", pageWidth / 2, 25, { align: "center" });
+        doc.setFontSize(12);
+
+        let yPos = 35;
+        students.forEach((student, index) => {
+          if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text(`Student ${index + 1}: ${student.name}`, 14, yPos);
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(10);
+          yPos += 7;
+          doc.text(`ID: ${student.id}`, 20, yPos);
+          yPos += 5;
+          doc.text(`Email: ${student.email}`, 20, yPos);
+          yPos += 5;
+          doc.text(`Course: ${student.course}`, 20, yPos);
+          yPos += 5;
+          doc.text(`Status: ${student.status}`, 20, yPos);
+          yPos += 5;
+          doc.text(`Enrolled: ${new Date(student.enrollmentDate).toLocaleDateString()}`, 20, yPos);
+          yPos += 15;
+        });
+        break;
+    }
+
+    // Save the PDF
+    doc.save(`student-${type}-report.pdf`);
+    
     toast({
       title: "Report Generated",
       description: `${type} report has been generated successfully.`,
