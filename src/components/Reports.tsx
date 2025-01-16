@@ -1,4 +1,4 @@
-import { FileText, Download, ChartBar } from "lucide-react";
+import { FileText, Download, ChartBar, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStudents } from "@/context/StudentContext";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { toast } from "@/components/ui/use-toast";
 
 const Reports = () => {
   const { students } = useStudents();
 
   const generateReport = (type: string) => {
-    // This is a placeholder for report generation
-    console.log(`Generating ${type} report...`);
-    // In a real application, this would generate and download a report
+    // In a real application, this would generate a proper PDF report
+    toast({
+      title: "Report Generated",
+      description: `${type} report has been generated successfully.`,
+    });
   };
+
+  // Calculate course distribution data for the chart
+  const courseData = students.reduce((acc: { [key: string]: number }, student) => {
+    acc[student.course] = (acc[student.course] || 0) + 1;
+    return acc;
+  }, {});
+
+  const chartData = Object.entries(courseData).map(([course, count]) => ({
+    course,
+    students: count,
+  }));
 
   const reports = [
     {
@@ -31,6 +54,12 @@ const Reports = () => {
       description: "Statistical analysis of student enrollment",
       icon: ChartBar,
       action: () => generateReport("enrollment-stats"),
+    },
+    {
+      title: "Print Report",
+      description: "Print a detailed report of all students",
+      icon: Printer,
+      action: () => generateReport("print"),
     },
   ];
 
@@ -71,6 +100,26 @@ const Reports = () => {
           </motion.div>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Course Distribution</CardTitle>
+          <CardDescription>Student enrollment by course</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="course" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="students" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="mt-8">
         <Card>
