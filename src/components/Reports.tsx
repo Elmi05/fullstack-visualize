@@ -20,7 +20,7 @@ import {
 } from "recharts";
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable, { UserOptions } from 'jspdf-autotable';
 
 const Reports = () => {
   const { students } = useStudents();
@@ -74,24 +74,24 @@ const Reports = () => {
           `${((count / students.length) * 100).toFixed(1)}%`
         ]);
 
-        let tableResult = autoTable(doc, {
+        const tableOptions: UserOptions = {
           head: [['Course', 'Students', 'Percentage']],
           body: courseData,
           startY: 35,
-        });
+        };
+
+        const result = autoTable(doc, tableOptions);
+        const finalY = result.lastAutoTable?.finalY || 35;
 
         // Status distribution
-        const activeCount = students.filter(s => s.status === 'active').length;
-        const inactiveCount = students.length - activeCount;
-
-        doc.text("Status Distribution", 14, (tableResult.finalY || 0) + 20);
+        doc.text("Status Distribution", 14, finalY + 20);
         autoTable(doc, {
           head: [['Status', 'Count', 'Percentage']],
           body: [
             ['Active', activeCount.toString(), `${((activeCount / students.length) * 100).toFixed(1)}%`],
             ['Inactive', inactiveCount.toString(), `${((inactiveCount / students.length) * 100).toFixed(1)}%`]
           ],
-          startY: (tableResult.finalY || 0) + 25,
+          startY: finalY + 25,
         });
         break;
 
@@ -147,6 +147,9 @@ const Reports = () => {
     students: count,
   }));
 
+  const activeCount = students.filter(s => s.status === 'active').length;
+  const inactiveCount = students.length - activeCount;
+
   const reports = [
     {
       title: "Student List",
@@ -170,12 +173,12 @@ const Reports = () => {
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <header>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Reports</h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">Generate and download student reports</p>
+      <header className="text-left">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Reports</h2>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-2">Generate and download student reports</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {reports.map((report, index) => (
           <motion.div
             key={report.title}
@@ -183,18 +186,18 @@ const Reports = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="h-full">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
                   <report.icon className="h-5 w-5" />
                   {report.title}
                 </CardTitle>
-                <CardDescription>{report.description}</CardDescription>
+                <CardDescription className="text-sm">{report.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button
                   onClick={report.action}
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                   variant="outline"
                 >
                   <Download className="mr-2 h-4 w-4" />
@@ -208,16 +211,16 @@ const Reports = () => {
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Course Distribution</CardTitle>
-          <CardDescription>Student enrollment by course</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Course Distribution</CardTitle>
+          <CardDescription className="text-sm">Student enrollment by course</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] sm:h-[400px] mt-4">
+          <div className="h-[250px] sm:h-[300px] lg:h-[400px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="course" />
-                <YAxis />
+                <XAxis dataKey="course" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Bar dataKey="students" fill="#3b82f6" />
               </BarChart>
@@ -229,26 +232,22 @@ const Reports = () => {
       <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Quick Statistics</CardTitle>
-            <CardDescription>Overview of current enrollment</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Quick Statistics</CardTitle>
+            <CardDescription className="text-sm">Overview of current enrollment</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Students</p>
-                <p className="text-2xl font-bold">{students.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Students</p>
+                <p className="text-xl sm:text-2xl font-bold">{students.length}</p>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Students</p>
-                <p className="text-2xl font-bold">
-                  {students.filter((s) => s.status === "active").length}
-                </p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Active Students</p>
+                <p className="text-xl sm:text-2xl font-bold">{activeCount}</p>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Inactive Students</p>
-                <p className="text-2xl font-bold">
-                  {students.filter((s) => s.status === "inactive").length}
-                </p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Inactive Students</p>
+                <p className="text-xl sm:text-2xl font-bold">{inactiveCount}</p>
               </div>
             </div>
           </CardContent>
