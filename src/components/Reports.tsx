@@ -74,7 +74,7 @@ const Reports = () => {
           `${((count / students.length) * 100).toFixed(1)}%`
         ]);
 
-        autoTable(doc, {
+        let tableResult = autoTable(doc, {
           head: [['Course', 'Students', 'Percentage']],
           body: courseData,
           startY: 35,
@@ -84,14 +84,14 @@ const Reports = () => {
         const activeCount = students.filter(s => s.status === 'active').length;
         const inactiveCount = students.length - activeCount;
 
-        doc.text("Status Distribution", 14, doc.lastAutoTable.finalY + 20);
+        doc.text("Status Distribution", 14, (tableResult.finalY || 0) + 20);
         autoTable(doc, {
           head: [['Status', 'Count', 'Percentage']],
           body: [
             ['Active', activeCount.toString(), `${((activeCount / students.length) * 100).toFixed(1)}%`],
             ['Inactive', inactiveCount.toString(), `${((inactiveCount / students.length) * 100).toFixed(1)}%`]
           ],
-          startY: doc.lastAutoTable.finalY + 25,
+          startY: (tableResult.finalY || 0) + 25,
         });
         break;
 
@@ -169,10 +169,10 @@ const Reports = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <header>
-        <h2 className="text-3xl font-bold text-gray-900">Reports</h2>
-        <p className="text-gray-600 mt-2">Generate and download student reports</p>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Reports</h2>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Generate and download student reports</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -206,13 +206,13 @@ const Reports = () => {
         ))}
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Course Distribution</CardTitle>
           <CardDescription>Student enrollment by course</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px] mt-4">
+          <div className="h-[300px] sm:h-[400px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -233,19 +233,19 @@ const Reports = () => {
             <CardDescription>Overview of current enrollment</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600">Total Students</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Students</p>
                 <p className="text-2xl font-bold">{students.length}</p>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600">Active Students</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Students</p>
                 <p className="text-2xl font-bold">
                   {students.filter((s) => s.status === "active").length}
                 </p>
               </div>
               <div className="p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600">Inactive Students</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Inactive Students</p>
                 <p className="text-2xl font-bold">
                   {students.filter((s) => s.status === "inactive").length}
                 </p>
