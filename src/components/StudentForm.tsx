@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { useStudents } from "@/context/StudentContext";
+import { useStudents, COURSES } from "@/context/StudentContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Student } from "@/types/student";
 
 interface StudentFormProps {
@@ -39,7 +47,7 @@ export function StudentForm({ student, isOpen, onClose }: StudentFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{student ? "Edit Student" : "Add New Student"}</DialogTitle>
         </DialogHeader>
@@ -65,24 +73,34 @@ export function StudentForm({ student, isOpen, onClose }: StudentFormProps) {
           </div>
           <div>
             <Label htmlFor="course">Course</Label>
-            <Input
-              id="course"
-              value={formData.course}
-              onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-              required
-            />
+            <Select 
+              value={formData.course} 
+              onValueChange={(value) => setFormData({ ...formData, course: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a course" />
+              </SelectTrigger>
+              <SelectContent>
+                {COURSES.map(course => (
+                  <SelectItem key={course} value={course}>{course}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
+            <Select 
+              value={formData.status} 
+              onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
             >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="enrollmentDate">Enrollment Date</Label>

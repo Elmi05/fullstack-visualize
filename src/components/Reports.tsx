@@ -1,3 +1,4 @@
+
 import { FileText, Download, ChartBar, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStudents } from "@/context/StudentContext";
@@ -20,7 +21,7 @@ import {
 } from "recharts";
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from 'jspdf';
-import autoTable, { UserOptions } from 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
   const { students } = useStudents();
@@ -74,14 +75,15 @@ const Reports = () => {
           `${((count / students.length) * 100).toFixed(1)}%`
         ]);
 
-        const tableOptions: UserOptions = {
+        // Fix TypeScript error by properly typing the autoTable result
+        const tableResult = autoTable(doc, {
           head: [['Course', 'Students', 'Percentage']],
           body: courseData,
           startY: 35,
-        };
-
-        const result = autoTable(doc, tableOptions);
-        const finalY = result.lastAutoTable?.finalY || 35;
+        });
+        
+        // Safely access finalY with optional chaining
+        const finalY = tableResult?.lastAutoTable?.finalY || 35;
 
         // Status distribution
         doc.text("Status Distribution", 14, finalY + 20);
